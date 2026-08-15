@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A Bouquet For You</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@500;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#FBF3EC; --paper:#FFFBF6;
+    --rose:#E3AEB3; --rose-deep:#C97B84;
+    --sage:#A9B99B; --sage-deep:#7F9270;
+    --gold:#C9A66B; --ink:#4A3B32; --ink-soft:#7A6A5E;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{
+    min-height:100%;
+    background: radial-gradient(circle at 20% 10%, #FDF6EF 0%, var(--cream) 45%, #F3E3DA 100%);
+    font-family:'Cormorant Garamond', serif;
+    color:var(--ink);
+  }
+
+  header{
+    text-align:center;
+    padding: 7vh 6vw 3vh;
+  }
+  .eyebrow{
+    font-family:'Jost', sans-serif; font-weight:400;
+    letter-spacing:0.35em; text-transform:uppercase;
+    font-size:0.68rem; color:var(--rose-deep); margin-bottom:1.2rem;
+  }
+  h1{
+    font-family:'Dancing Script', cursive;
+    font-weight:600;
+    font-size:clamp(2rem, 5vw, 3rem);
+    color:var(--ink);
+  }
+  .sub{
+    margin-top:0.8rem;
+    font-size:1.05rem;
+    color:var(--ink-soft);
+    font-style:italic;
+  }
+
+  .progress{
+    text-align:center;
+    font-family:'Jost', sans-serif;
+    font-size:0.72rem;
+    letter-spacing:0.12em;
+    color:var(--sage-deep);
+    margin-bottom: 2rem;
+  }
+
+  .garden{
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 0 6vw 8vh;
+    display:grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 2.6rem 1.6rem;
+  }
+
+  .flower-slot{
+    display:flex; flex-direction:column; align-items:center;
+    cursor:pointer;
+    background:none; border:none;
+    padding: 1rem 0.5rem;
+    font-family:inherit;
+    border-radius: 12px;
+    transition: transform 0.3s ease;
+  }
+  .flower-slot:hover{ transform: translateY(-4px); }
+  .flower-slot:focus-visible{ outline:2px solid var(--sage-deep); outline-offset:6px; }
+
+  .flower-svg{
+    width: 96px; height:120px;
+    filter: drop-shadow(0 8px 10px rgba(90,60,50,0.12));
+    transition: transform 0.5s cubic-bezier(.34,1.4,.64,1);
+  }
+  .flower-slot.bloomed .flower-svg{ transform: scale(1.08); }
+  .flower-slot:not(.bloomed) .flower-svg{ opacity:0.85; }
+
+  .flower-name{
+    margin-top:0.7rem;
+    font-family:'Jost', sans-serif;
+    font-size:0.78rem;
+    letter-spacing:0.06em;
+    color: var(--ink-soft);
+  }
+  .flower-slot.bloomed .flower-name{ color: var(--rose-deep); }
+
+  .dot{
+    width:6px; height:6px; border-radius:50%;
+    background: var(--rose-deep);
+    margin-top:0.35rem;
+    opacity:0;
+    transition: opacity 0.3s ease;
+  }
+  .flower-slot.bloomed .dot{ opacity:1; }
+
+  /* bud wiggle on click */
+  @keyframes bloomPop{
+    0%{ transform:scale(1); }
+    45%{ transform:scale(1.22); }
+    100%{ transform:scale(1.08); }
+  }
+  .flower-slot.just-bloomed .flower-svg{ animation: bloomPop 0.55s ease; }
+
+  /* ---------- note overlay ---------- */
+  .overlay{
+    position:fixed; inset:0; z-index:10;
+    display:flex; align-items:center; justify-content:center;
+    padding: 5vh 5vw;
+    background: rgba(74,59,50,0.32);
+    backdrop-filter: blur(3px);
+    opacity:0; pointer-events:none;
+    transition: opacity 0.4s ease;
+  }
+  .overlay.visible{ opacity:1; pointer-events:auto; }
+
+  .card{
+    position:relative;
+    max-width:480px; width:100%;
+    background:var(--paper);
+    padding: 3rem 2.4rem 2.4rem;
+    border-radius:6px;
+    box-shadow: 0 26px 50px rgba(60,40,30,0.32);
+    text-align:center;
+    transform: translateY(18px) scale(0.97);
+    opacity:0;
+    transition: transform 0.5s cubic-bezier(.2,.7,.3,1), opacity 0.5s ease;
+  }
+  .overlay.visible .card{ transform:translateY(0) scale(1); opacity:1; }
+
+  .card .icon{ width:72px; height:88px; margin: 0 auto 1rem; }
+  .card .fname{
+    font-family:'Dancing Script', cursive;
+    font-size:2rem; color:var(--rose-deep);
+  }
+  .card .meaning{
+    font-family:'Jost', sans-serif;
+    font-size:0.68rem; letter-spacing:0.14em; text-transform:uppercase;
+    color:var(--sage-deep); margin: 0.5rem 0 1.4rem;
+  }
+  .card .note{
+    font-size:1.15rem; line-height:1.75; color:var(--ink);
+    text-align:left;
+  }
+  .close-btn{
+    position:absolute; top:12px; right:14px;
+    font-family:'Jost', sans-serif; font-size:0.68rem;
+    letter-spacing:0.14em; text-transform:uppercase;
+    background:none; border:none; color:var(--ink-soft); cursor:pointer;
+    padding:8px;
+  }
+  .close-btn:hover{ color:var(--rose-deep); }
+
+  /* ---------- final bouquet ---------- */
+  .finale{
+    display:none;
+    text-align:center;
+    padding: 3rem 6vw 8vh;
+  }
+  .finale.visible{ display:block; }
+  .finale-flowers{
+    display:flex; justify-content:center; gap:0.4rem;
+    flex-wrap:wrap; margin-bottom:1.6rem;
+  }
+  .finale-flowers svg{ width:52px; height:64px; }
+  .finale p{
+    max-width:560px; margin: 0 auto 1.4rem;
+    font-size:1.2rem; line-height:1.8; color:var(--ink);
+  }
+  .finale .name{
+    font-family:'Dancing Script', cursive;
+    font-size:1.8rem; color:var(--rose-deep);
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <p class="eyebrow">a garden, picked one flower at a time</p>
+  <h1>a small bouquet for you</h1>
+  <p class="sub">tap each one to let it bloom</p>
+</header>
+
+<p class="progress" id="progress">0 of 8 bloomed</p>
+
+<div class="garden" id="garden"></div>
+
+<section class="finale" id="finale">
+  <div class="finale-flowers" id="finaleFlowers"></div>
+  <p>Eight flowers, eight small truths — but really it's all one thing dressed up different ways: I am so grateful for you. Thank you for being the first person I ever wrote a letter to, and for making a bouquet like this feel like it still wasn't enough.</p>
+  <p class="name">— your gardener from a little too far away 🌷</p>
+</section>
+
+<div class="overlay" id="overlay">
+  <div class="card" id="card">
+    <button class="close-btn" id="closeBtn">close ✕</button>
+    <div class="icon" id="cardIcon"></div>
+    <p class="fname" id="cardName"></p>
+    <p class="meaning" id="cardMeaning"></p>
+    <p class="note" id="cardNote"></p>
+  </div>
+</div>
+
+<script>
+/* ---------- flower data ---------- */
+const flowers = [
+  {
+    key:'sunflower', name:'Sunflower', meaning:'Warmth & Loyalty',
+    petals:12, petalColor:'#E8B84A', centerColor:'#8A5A2B',
+    note:"You have this way of turning toward people with your whole warmth, even from a distance. I notice it every time we talk — like a sunflower that just keeps facing the light, you keep facing me, and I never take that for granted."
+  },
+  {
+    key:'forgetmenot', name:'Forget-Me-Not', meaning:'Lasting, True Love',
+    petals:5, petalColor:'#8FB8E0', centerColor:'#E8B84A',
+    note:"Small flower, biggest promise. No matter how many days pass between seeing you, you're never actually far from my mind. Not once. Not even close."
+  },
+  {
+    key:'peony', name:'Peony', meaning:'Romance & a Happy Future',
+    petals:16, petalColor:'#E39BAE', centerColor:'#C97B84',
+    note:"This one's for the future I let myself picture — the one where the distance is just a chapter, not the whole story. I mean it when I imagine building something lasting with you."
+  },
+  {
+    key:'camellia', name:'Camellia', meaning:'Admiration',
+    petals:8, petalColor:'#D6555A', centerColor:'#F4E2C4',
+    note:"You are one of the most genuinely good people I've ever known, and I don't say that lightly. I admire you more than I probably show."
+  },
+  {
+    key:'iris', name:'Iris', meaning:'Faith & Hope',
+    petals:6, petalColor:'#8467AD', centerColor:'#E8B84A',
+    note:"On the harder days, the ones where the distance actually stings, you're the reason I keep having faith it's worth it. Hope isn't abstract when it has your face."
+  },
+  {
+    key:'lavender', name:'Lavender', meaning:'Devotion & Calm',
+    petals:10, petalColor:'#9B87C4', centerColor:'#6F5E9A',
+    note:"You make things feel calm in a way I didn't know I needed. Talking to you is the most settled I feel in most days — like exhaling."
+  },
+  {
+    key:'sweetpea', name:'Sweet Pea', meaning:'Blissful Happiness',
+    petals:6, petalColor:'#F0AFC4', centerColor:'#E38CA8',
+    note:"The small, dumb, everyday joys — a random text, a voice note, an inside joke — you turn ordinary moments into ones I actually look forward to."
+  },
+  {
+    key:'tulip', name:'Red Tulip', meaning:'A Declaration of Love',
+    petals:6, petalColor:'#C23B3B', centerColor:'#7A2020',
+    note:"No metaphor for this one. I just love you. Plainly, fully, and from wherever I happen to be standing."
+  }
+];
+
+/* ---------- svg flower builder ---------- */
+function flowerSVG(f, bloomed){
+  const petalR = 16;
+  const cx = 48, cy = 46;
+  let petals = '';
+  for(let i=0;i<f.petals;i++){
+    const angle = (360/f.petals)*i;
+    const color = bloomed ? f.petalColor : '#C9C2B6';
+    petals += `<ellipse cx="${cx}" cy="${cy-20}" rx="9" ry="16"
+      fill="${color}" opacity="${bloomed?0.92:0.55}"
+      transform="rotate(${angle} ${cx} ${cy})"/>`;
+  }
+  const centerColor = bloomed ? f.centerColor : '#9C9384';
+  return `
+  <svg class="flower-svg" viewBox="0 0 96 120" xmlns="http://www.w3.org/2000/svg">
+    <line x1="48" y1="66" x2="48" y2="114" stroke="#8FA37E" stroke-width="4" stroke-linecap="round"/>
+    <path d="M48 96 C 38 92, 32 84, 34 78" stroke="#8FA37E" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <g>${petals}</g>
+    <circle cx="${cx}" cy="${cy}" r="9" fill="${centerColor}"/>
+  </svg>`;
+}
+
+/* ---------- render garden ---------- */
+const garden = document.getElementById('garden');
+const opened = new Set();
+
+flowers.forEach((f, idx) => {
+  const slot = document.createElement('button');
+  slot.className = 'flower-slot';
+  slot.setAttribute('aria-label', `Reveal ${f.name}`);
+  slot.dataset.key = f.key;
+  slot.innerHTML = `
+    ${flowerSVG(f, false)}
+    <span class="flower-name">${f.name}</span>
+    <span class="dot"></span>
+  `;
+  slot.addEventListener('click', () => revealFlower(f, slot));
+  garden.appendChild(slot);
+});
+
+function updateProgress(){
+  document.getElementById('progress').textContent = `${opened.size} of 8 bloomed`;
+  if(opened.size === flowers.length){
+    buildFinale();
+    document.getElementById('finale').classList.add('visible');
+  }
+}
+
+function revealFlower(f, slot){
+  if(!opened.has(f.key)){
+    opened.add(f.key);
+    slot.classList.add('bloomed','just-bloomed');
+    slot.querySelector('.flower-svg').outerHTML = flowerSVG(f, true);
+    setTimeout(()=> slot.classList.remove('just-bloomed'), 600);
+    updateProgress();
+  }
+  openCard(f);
+}
+
+/* ---------- note card ---------- */
+const overlay = document.getElementById('overlay');
+const closeBtn = document.getElementById('closeBtn');
+
+function openCard(f){
+  document.getElementById('cardIcon').innerHTML = flowerSVG(f, true);
+  document.getElementById('cardName').textContent = f.name;
+  document.getElementById('cardMeaning').textContent = f.meaning;
+  document.getElementById('cardNote').textContent = f.note;
+  overlay.classList.add('visible');
+}
+function closeCard(){ overlay.classList.remove('visible'); }
+closeBtn.addEventListener('click', closeCard);
+overlay.addEventListener('click', (e)=>{ if(e.target===overlay) closeCard(); });
+
+/* ---------- finale bouquet ---------- */
+function buildFinale(){
+  const wrap = document.getElementById('finaleFlowers');
+  wrap.innerHTML = flowers.map(f => flowerSVG(f, true)).join('');
+}
+</script>
+
+</body>
+</html>
